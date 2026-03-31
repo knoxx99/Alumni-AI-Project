@@ -1,7 +1,5 @@
-"""
-app.py
-Main Flask API for the Alumni AI Information Extraction and Profiling System.
-"""
+# app.py
+# Flask API for Alumni Information Extraction System
 
 import os
 import pickle
@@ -12,145 +10,168 @@ from dotenv import load_dotenv
 from alumni_extractor_v1 import extract_alumni_info
 from db import insert_alumni, fetch_all_alumni, delete_alumni
 
+# load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-# ── CORS: allow React dev server ──────────────────────────────────────────────
+# allow frontend (React or others) to access API
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# ── Load ML Model (Pipeline: TF-IDF + Classifier) ────────────────────────────
+# -------------------------------
+# Load ML Model
+# -------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "ml_model", "model.pkl")
+MODEL_FILE = os.path.join(BASE_DIR, "ml_model", "model.pkl")
+
+model = None
 
 try:
-    with open(MODEL_PATH, "rb") as f:
-        model_pipeline = pickle.load(f)
-    print("✅ ML model loaded successfully.")
+    with open(MODEL_FILE, "rb") as file:
+        model = pickle.load(file)
+    print("Model loaded successfully.")
 except FileNotFoundError:
-    model_pipeline = None
-    print("⚠️  WARNING: model.pkl not found. Run train_model.py first.")
+    print("Model file not found. Please run training script first.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------
+# Helper Functions
+# -------------------------------
 
-def predict_category(text: str) -> str:
-    """Predict alumni category from text using the loaded pipeline."""
-    if model_pipeline is None:
+def get_category(text):
+    # predict category using trained model
+    if model is None:
         return "Unknown"
-    prediction = model_pipeline.predict([text])
-    return prediction[0]
+
+    result = model.predict([text])
+    return result[0]
 
 
-def predict_probabilities(text: str) -> dict:
-    """Return prediction probabilities for all categories."""
-    if model_pipeline is None or not hasattr(model_pipeline, 'predict_proba'):
+def get_probabilities(text):
+    # return probability of each class
+    if model is None or not hasattr(model, "predict_proba"):
         return {}
+
     try:
-        proba = model_pipeline.predict_proba([text])[0]
-        classes = model_pipeline.classes_
-        return {cls: round(float(p), 4) for cls, p in zip(classes, proba)}
+        probs = model.predict_proba([text])[0]
+        labels = model.classes_
+
+        output = {}
+        for label, prob in zip(labels, probs):
+            output[label] = round(float(prob), 4)
+
+        return output
+
     except Exception:
         return {}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ROUTES
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------
+# Routes
+# -------------------------------
 
 @app.route("/", methods=["GET"])
-def health_check():
+def home():
+    # simple API check
     return jsonify({
         "status": "running",
-        "message": "Alumni AI API is live 🚀",
-        "model_loaded": model_pipeline is not None
+        "message": "API is working",
+        "model_loaded": model is not None
     })
 
 
 @app.route("/api/predict", methods=["POST"])
 def predict():
-    """
-    POST /api/predict
-    Body: { "text": "<alumni description>" }
-    Returns extracted info + predicted category + saves to DB.
-    """
     data = request.get_json(silent=True)
+
     if not data or "text" not in data:
-        return jsonify({"error": "Missing 'text' field in request body."}), 400
+        return jsonify({"error": "Text field is required"}), 400
 
     text = data["text"].strip()
+
     if len(text) < 10:
-        return jsonify({"error": "Text too short. Please provide a meaningful description."}), 400
+        return jsonify({"error": "Text is too short"}), 400
 
-    # Step 1: Extract structured info from text
-    extracted = extract_alumni_info(text)
+    # extract details from text
+    extracted_data = extract_alumni_info(text)
 
-    # Step 2: Predict category using ML model
-    category = predict_category(text)
-    probabilities = predict_probabilities(text)
+    # predict category
+    category = get_category(text)
+    probabilities = get_probabilities(text)
 
-    # Step 3: Merge category into extracted data
-    extracted["category"] = category
+    extracted_data["category"] = category
 
-    # Step 4: Save to MySQL
+    # save to database
     try:
-        new_id = insert_alumni(extracted)
-        extracted["id"] = new_id
-        db_saved = True
+        record_id = insert_alumni(extracted_data)
+        extracted_data["id"] = record_id
+        db_status = True
         db_error = None
-    except Exception as e:
-        db_saved = False
-        db_error = str(e)
-        extracted["id"] = None
+    except Exception as err:
+        extracted_data["id"] = None
+        db_status = False
+        db_error = str(err)
 
     return jsonify({
         "success": True,
-        "data": extracted,
+        "data": extracted_data,
         "probabilities": probabilities,
-        "db_saved": db_saved,
+        "db_saved": db_status,
         "db_error": db_error
-    }), 200
+    })
 
 
 @app.route("/api/alumni", methods=["GET"])
-def get_all_alumni():
-    """
-    GET /api/alumni
-    Returns all alumni records from DB (latest first).
-    Supports ?limit=N query param.
-    """
+def get_alumni():
+    # get all records (with optional limit)
     limit = request.args.get("limit", 100, type=int)
+
     try:
         records = fetch_all_alumni(limit=limit)
-        return jsonify({"success": True, "count": len(records), "data": records}), 200
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+
+        return jsonify({
+            "success": True,
+            "count": len(records),
+            "data": records
+        })
+
+    except Exception as err:
+        return jsonify({
+            "success": False,
+            "error": str(err)
+        }), 500
 
 
 @app.route("/api/alumni/<int:alumni_id>", methods=["DELETE"])
-def delete_alumni_record(alumni_id):
-    """
-    DELETE /api/alumni/<id>
-    Removes an alumni record by ID.
-    """
+def delete_alumni_by_id(alumni_id):
     try:
-        deleted = delete_alumni(alumni_id)
-        if deleted:
-            return jsonify({"success": True, "message": f"Alumni #{alumni_id} deleted."}), 200
-        else:
-            return jsonify({"success": False, "message": "Record not found."}), 404
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        is_deleted = delete_alumni(alumni_id)
+
+        if is_deleted:
+            return jsonify({
+                "success": True,
+                "message": f"Record {alumni_id} deleted"
+            })
+
+        return jsonify({
+            "success": False,
+            "message": "Record not found"
+        }), 404
+
+    except Exception as err:
+        return jsonify({
+            "success": False,
+            "error": str(err)
+        }), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------
+# Run Server
+# -------------------------------
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "true").lower() == "true"
-    print(f"🚀 Starting Alumni AI Flask API on port {port}...")
-    app.run(host="0.0.0.0", port=port, debug=debug)
+    debug_mode = os.getenv("FLASK_DEBUG", "true").lower() == "true"
+
+    print(f"Server running on port {port}...")
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
