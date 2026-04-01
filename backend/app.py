@@ -1,177 +1,98 @@
-# app.py
-# Flask API for Alumni Information Extraction System
-
+"""
+app.py - Main Flask API with Authentication
+"""
 import os
 import pickle
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-
 from alumni_extractor_v1 import extract_alumni_info
 from db import insert_alumni, fetch_all_alumni, delete_alumni
+from auth import auth_bp, get_current_user
 
-# load environment variables
 load_dotenv()
-
 app = Flask(__name__)
-
-# allow frontend (React or others) to access API
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.register_blueprint(auth_bp)
 
-# -------------------------------
-# Load ML Model
-# -------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_FILE = os.path.join(BASE_DIR, "ml_model", "model.pkl")
-
-model = None
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "ml_model", "model.pkl")
 
 try:
-    with open(MODEL_FILE, "rb") as file:
-        model = pickle.load(file)
-    print("Model loaded successfully.")
+    with open(MODEL_PATH, "rb") as f:
+        model_pipeline = pickle.load(f)
+    print("✅ ML model loaded successfully.")
 except FileNotFoundError:
-    print("Model file not found. Please run training script first.")
+    model_pipeline = None
+    print("⚠️  model.pkl not found. Run train_model.py first.")
 
+def predict_category(text):
+    if model_pipeline is None: return "Unknown"
+    return model_pipeline.predict([text])[0]
 
-# -------------------------------
-# Helper Functions
-# -------------------------------
-
-def get_category(text):
-    # predict category using trained model
-    if model is None:
-        return "Unknown"
-
-    result = model.predict([text])
-    return result[0]
-
-
-def get_probabilities(text):
-    # return probability of each class
-    if model is None or not hasattr(model, "predict_proba"):
-        return {}
-
+def predict_probabilities(text):
+    if model_pipeline is None or not hasattr(model_pipeline, "predict_proba"): return {}
     try:
-        probs = model.predict_proba([text])[0]
-        labels = model.classes_
+        proba = model_pipeline.predict_proba([text])[0]
+        return {cls: round(float(p), 4) for cls, p in zip(model_pipeline.classes_, proba)}
+    except: return {}
 
-        output = {}
-        for label, prob in zip(labels, probs):
-            output[label] = round(float(prob), 4)
-
-        return output
-
-    except Exception:
-        return {}
-
-
-# -------------------------------
-# Routes
-# -------------------------------
+def require_auth(roles=None):
+    user = get_current_user(request)
+    if not user:
+        return None, (jsonify({"error": "Unauthorized. Please log in."}), 401)
+    if roles and user.get("role") not in roles:
+        return None, (jsonify({"error": "Access denied. Insufficient permissions."}), 403)
+    return user, None
 
 @app.route("/", methods=["GET"])
-def home():
-    # simple API check
-    return jsonify({
-        "status": "running",
-        "message": "API is working",
-        "model_loaded": model is not None
-    })
-
+def health_check():
+    return jsonify({"status": "running", "message": "Alumni AI API is live 🚀", "model_loaded": model_pipeline is not None})
 
 @app.route("/api/predict", methods=["POST"])
 def predict():
+    user, err = require_auth(roles=["admin"])
+    if err: return err
     data = request.get_json(silent=True)
-
     if not data or "text" not in data:
-        return jsonify({"error": "Text field is required"}), 400
-
+        return jsonify({"error": "Missing 'text' field."}), 400
     text = data["text"].strip()
-
     if len(text) < 10:
-        return jsonify({"error": "Text is too short"}), 400
-
-    # extract details from text
-    extracted_data = extract_alumni_info(text)
-
-    # predict category
-    category = get_category(text)
-    probabilities = get_probabilities(text)
-
-    extracted_data["category"] = category
-
-    # save to database
+        return jsonify({"error": "Text too short."}), 400
+    extracted = extract_alumni_info(text)
+    extracted["category"] = predict_category(text)
+    probabilities = predict_probabilities(text)
     try:
-        record_id = insert_alumni(extracted_data)
-        extracted_data["id"] = record_id
-        db_status = True
-        db_error = None
-    except Exception as err:
-        extracted_data["id"] = None
-        db_status = False
-        db_error = str(err)
-
-    return jsonify({
-        "success": True,
-        "data": extracted_data,
-        "probabilities": probabilities,
-        "db_saved": db_status,
-        "db_error": db_error
-    })
-
+        new_id = insert_alumni(extracted)
+        extracted["id"] = new_id
+        db_saved = True; db_error = None
+    except Exception as e:
+        db_saved = False; db_error = str(e); extracted["id"] = None
+    return jsonify({"success": True, "data": extracted, "probabilities": probabilities, "db_saved": db_saved, "db_error": db_error}), 200
 
 @app.route("/api/alumni", methods=["GET"])
-def get_alumni():
-    # get all records (with optional limit)
+def get_all_alumni():
+    user, err = require_auth(roles=["admin", "student"])
+    if err: return err
     limit = request.args.get("limit", 100, type=int)
-
     try:
         records = fetch_all_alumni(limit=limit)
-
-        return jsonify({
-            "success": True,
-            "count": len(records),
-            "data": records
-        })
-
-    except Exception as err:
-        return jsonify({
-            "success": False,
-            "error": str(err)
-        }), 500
-
+        return jsonify({"success": True, "count": len(records), "data": records}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/alumni/<int:alumni_id>", methods=["DELETE"])
-def delete_alumni_by_id(alumni_id):
+def delete_alumni_record(alumni_id):
+    user, err = require_auth(roles=["admin"])
+    if err: return err
     try:
-        is_deleted = delete_alumni(alumni_id)
-
-        if is_deleted:
-            return jsonify({
-                "success": True,
-                "message": f"Record {alumni_id} deleted"
-            })
-
-        return jsonify({
-            "success": False,
-            "message": "Record not found"
-        }), 404
-
-    except Exception as err:
-        return jsonify({
-            "success": False,
-            "error": str(err)
-        }), 500
-
-
-# -------------------------------
-# Run Server
-# -------------------------------
+        deleted = delete_alumni(alumni_id)
+        if deleted: return jsonify({"success": True, "message": f"Alumni #{alumni_id} deleted."}), 200
+        else: return jsonify({"success": False, "message": "Record not found."}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    debug_mode = os.getenv("FLASK_DEBUG", "true").lower() == "true"
-
-    print(f"Server running on port {port}...")
-    app.run(host="0.0.0.0", port=port, debug=debug_mode)
+    print(f"🚀 Starting Alumni AI Flask API on port {port}...")
+    app.run(host="0.0.0.0", port=port, debug=True)

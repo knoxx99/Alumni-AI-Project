@@ -1,14 +1,14 @@
-/* ─── Google Fonts ──────── */
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ─── Reset ──── */
+/* ─── Reset ─────────────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* ─── CSS Variables (Dark Mode Default)  */
+/* ─── CSS Variables (Dark Mode Default) ─────────────────────────────────────── */
 :root {
   --bg:        #0d0f14;
   --surface:   #161a23;
@@ -30,7 +30,7 @@
   --mono:      'JetBrains Mono', monospace;
 }
 
-/* ─── Light Mode Variables ── */
+/* ─── Light Mode Variables ───────────────────────────────────────────────────── */
 .light-mode {
   --bg:        #f0f4ff;
   --surface:   #ffffff;
@@ -43,7 +43,7 @@
   --shadow-lg: 0 8px 48px rgba(79, 142, 247, 0.15);
 }
 
-/* ─── Base ────── */
+/* ─── Base ───────────────────────────────────────────────────────────────────── */
 html, body, #root {
   height: 100%;
   background: var(--bg);
@@ -52,7 +52,7 @@ html, body, #root {
   transition: background 0.3s, color 0.3s;
 }
 
-/* ─── Scrollbar ─ */
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -64,7 +64,7 @@ html, body, #root {
   border-radius: 3px;
 }
 
-/* ─── Animations  */
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -82,14 +82,14 @@ html, body, #root {
 .fade-up  { animation: fadeUp 0.4s ease forwards; }
 .slide-in { animation: slideIn 0.3s ease forwards; }
 
-/* ─── Layout ──── */
+/* ─── Layout ─────────────────────────────────────────────────────────────────── */
 .app-shell {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
 }
 
-/* ─── Header ──── */
+/* ─── Header ─────────────────────────────────────────────────────────────────── */
 .header {
   padding: 18px 32px;
   border-bottom: 1px solid var(--border);
@@ -141,7 +141,7 @@ html, body, #root {
   align-items: center;
 }
 
-/* ─── Tab Navigation ──────── */
+/* ─── Tab Navigation ─────────────────────────────────────────────────────────── */
 .tab-nav {
   display: flex;
   background: var(--surface2);
@@ -168,7 +168,7 @@ html, body, #root {
   color: #fff;
 }
 
-/* ─── Icon Button ─────────── */
+/* ─── Icon Button ────────────────────────────────────────────────────────────── */
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -189,7 +189,7 @@ html, body, #root {
   background: var(--surface);
 }
 
-/* ─── Main Content Area ───── */
+/* ─── Main Content Area ──────────────────────────────────────────────────────── */
 .content-area {
   padding: 32px;
   max-width: 1200px;
@@ -197,7 +197,7 @@ html, body, #root {
   width: 100%;
 }
 
-/* ─── Cards ───── */
+/* ─── Cards ──────────────────────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -221,14 +221,14 @@ html, body, #root {
   gap: 8px;
 }
 
-/* ─── Predict Tab Grid ────── */
+/* ─── Predict Tab Grid ───────────────────────────────────────────────────────── */
 .predict-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
 }
 
-/* ─── Textarea / Input Section ────────── */
+/* ─── Textarea / Input Section ───────────────────────────────────────────────── */
 .input-section label {
   display: block;
   font-size: 13px;
@@ -285,7 +285,7 @@ html, body, #root {
   gap: 4px;
 }
 
-/* ─── Example Chips ───────── */
+/* ─── Example Chips ──────────────────────────────────────────────────────────── */
 .examples-label {
   font-size: 12px;
   color: var(--muted);
@@ -319,7 +319,7 @@ html, body, #root {
   color: var(--accent);
 }
 
-/* ─── Submit Button ───────── */
+/* ─── Submit Button ──────────────────────────────────────────────────────────── */
 .submit-btn {
   width: 100%;
   margin-top: 16px;
@@ -350,7 +350,7 @@ html, body, #root {
   transform: none;
 }
 
-/* ─── Spinner ─── */
+/* ─── Spinner ────────────────────────────────────────────────────────────────── */
 .spinner {
   width: 18px;
   height: 18px;
@@ -360,14 +360,14 @@ html, body, #root {
   animation: spin 0.7s linear infinite;
 }
 
-/* ─── Result Panel ────────── */
+/* ─── Result Panel ───────────────────────────────────────────────────────────── */
 .result-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* ─── Category Display ────── */
+/* ─── Category Display ───────────────────────────────────────────────────────── */
 .category-display {
   display: flex;
   align-items: center;
@@ -382,7 +382,7 @@ html, body, #root {
 .cat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .cat-value { font-size: 22px; font-weight: 700; margin-top: 2px; }
 
-/* ─── Probability Bars ────── */
+/* ─── Probability Bars ───────────────────────────────────────────────────────── */
 .prob-grid { display: flex; flex-direction: column; gap: 6px; }
 
 .prob-row  { display: flex; align-items: center; gap: 8px; }
@@ -416,7 +416,7 @@ html, body, #root {
   text-align: right;
 }
 
-/* ─── Extracted Info Grid ─── */
+/* ─── Extracted Info Grid ────────────────────────────────────────────────────── */
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -455,7 +455,7 @@ html, body, #root {
   font-size: 12px;
 }
 
-/* ─── Skills Tags ─────────── */
+/* ─── Skills Tags ────────────────────────────────────────────────────────────── */
 .skills-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -473,7 +473,7 @@ html, body, #root {
   font-family: var(--mono);
 }
 
-/* ─── Copy JSON Button ────── */
+/* ─── Copy JSON Button ───────────────────────────────────────────────────────── */
 .copy-btn {
   display: flex;
   align-items: center;
@@ -493,7 +493,7 @@ html, body, #root {
 .copy-btn:hover          { border-color: var(--success); color: var(--success); }
 .copy-btn.copied         { border-color: var(--success); color: var(--success); background: rgba(16, 185, 129, 0.08); }
 
-/* ─── Empty State ─────────── */
+/* ─── Empty State ────────────────────────────────────────────────────────────── */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -509,7 +509,7 @@ html, body, #root {
 .empty-title { font-size: 15px; font-weight: 600; }
 .empty-sub   { font-size: 13px; opacity: 0.7; }
 
-/* ─── Toast Notification ──── */
+/* ─── Toast Notification ─────────────────────────────────────────────────────── */
 .toast {
   position: fixed;
   bottom: 24px;
@@ -531,7 +531,7 @@ html, body, #root {
 .toast.success { border-color: var(--success); }
 .toast.error   { border-color: var(--error); }
 
-/* ─── History Section ─────── */
+/* ─── History Section ────────────────────────────────────────────────────────── */
 .history-section {
   animation: fadeUp 0.4s ease;
 }
@@ -545,7 +545,7 @@ html, body, #root {
   gap: 12px;
 }
 
-/* ─── Search Input ────────── */
+/* ─── Search Input ───────────────────────────────────────────────────────────── */
 .search-wrap {
   position: relative;
 }
@@ -577,7 +577,7 @@ html, body, #root {
   pointer-events: none;
 }
 
-/* ─── Table ───── */
+/* ─── Table ──────────────────────────────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
   border-radius: var(--radius);
@@ -618,7 +618,7 @@ tbody tr:last-child td { border-bottom: none; }
 tbody tr               { transition: background 0.15s; }
 tbody tr:hover         { background: var(--surface2); }
 
-/* ─── Category Badge ──────── */
+/* ─── Category Badge ─────────────────────────────────────────────────────────── */
 .cat-badge {
   display: inline-flex;
   align-items: center;
@@ -630,7 +630,7 @@ tbody tr:hover         { background: var(--surface2); }
   white-space: nowrap;
 }
 
-/* ─── Delete Button ───────── */
+/* ─── Delete Button ──────────────────────────────────────────────────────────── */
 .del-btn {
   padding: 4px 10px;
   background: transparent;
@@ -648,13 +648,13 @@ tbody tr:hover         { background: var(--surface2); }
   background: rgba(239, 68, 68, 0.06);
 }
 
-/* ─── Muted Text  */
+/* ─── Muted Text ─────────────────────────────────────────────────────────────── */
 .muted {
   color: var(--muted);
   font-style: italic;
 }
 
-/* ─── Stats Row ─ */
+/* ─── Stats Row ──────────────────────────────────────────────────────────────── */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -675,7 +675,7 @@ tbody tr:hover         { background: var(--surface2); }
 .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .stat-value { font-size: 26px; font-weight: 700; }
 
-/* ─── Responsive  */
+/* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .predict-grid  { grid-template-columns: 1fr; }
   .content-area  { padding: 16px; }

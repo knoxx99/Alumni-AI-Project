@@ -10,9 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─────────────────────────────────────────────
 # DB Config — set these in your .env file
-# ─────────────────────────────────────────────
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST", "localhost"),
     "user":     os.getenv("DB_USER", "root"),

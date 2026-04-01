@@ -29,19 +29,19 @@ def extract_alumni_info(text: str) -> dict:
         "graduation_year": None
     }
 
-    # ── Email ──────────────────────────────────────────────────────────────
+    # ── Email ──────────
     email_pattern = r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}'
     email_match = re.search(email_pattern, text)
     if email_match:
         info["email"] = email_match.group()
 
-    # ── Phone ──────────────────────────────────────────────────────────────
+    # ── Phone ──────────
     phone_pattern = r'(\+91[\-\s]?)?[6-9]\d{9}|(\+?\d[\d\s\-]{8,12}\d)'
     phone_match = re.search(phone_pattern, text)
     if phone_match:
         info["phone"] = re.sub(r'[\s\-]', '', phone_match.group()).strip()
 
-    # ── Graduation Year ────────────────────────────────────────────────────
+    # ── Graduation Year 
     grad_patterns = [
         r'(?:batch|graduated?|passout|class)\s+(?:of\s+)?(\d{4})',
         r'(\d{4})\s+(?:batch|graduate|passout|alumni)',
@@ -55,7 +55,7 @@ def extract_alumni_info(text: str) -> dict:
                 info["graduation_year"] = year
                 break
 
-    # ── Company ────────────────────────────────────────────────────────────
+    # ── Company ────────
     company_patterns = [
         r'(?:at|@|with|in|for|working at|employed at|joined)\s+([A-Z][A-Za-z0-9\s&.,]+?)(?:\s+(?:as|in|and|,)|$)',
         r'([A-Z][A-Za-z0-9\s&]+(?:Inc|Ltd|LLC|Pvt|Technologies|Solutions|Systems|Group|Corp|Company)?)\s+(?:as|employee|team)',
@@ -68,7 +68,7 @@ def extract_alumni_info(text: str) -> dict:
                 info["company"] = company
                 break
 
-    # ── Job Role ───────────────────────────────────────────────────────────
+    # ── Job Role ───────
     role_keywords = [
         "software engineer", "data scientist", "machine learning engineer",
         "product manager", "project manager", "business analyst",
@@ -93,7 +93,7 @@ def extract_alumni_info(text: str) -> dict:
             info["job_role"] = text[idx: idx + len(role)].title()
             break
 
-    # ── Skills ─────────────────────────────────────────────────────────────
+    # ── Skills ─────────
     skill_keywords = [
         "python", "java", "javascript", "typescript", "c++", "c#", "go", "rust",
         "react", "angular", "vue", "node.js", "nodejs", "django", "flask",
@@ -117,7 +117,7 @@ def extract_alumni_info(text: str) -> dict:
             found_skills.append(skill.title())
     info["skills"] = ", ".join(found_skills) if found_skills else ""
 
-    # ── Name ───────────────────────────────────────────────────────────────
+    # ── Name ───────────
     # Strategy: look for "Name: X", or leading proper noun phrase before verb
     name_label_match = re.search(r'(?:name\s*[:\-]\s*)([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,2})', text)
     if name_label_match:

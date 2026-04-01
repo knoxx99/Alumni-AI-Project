@@ -16,9 +16,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 
-# ─────────────────────────────────────────────
 # 1. Load Dataset
-# ─────────────────────────────────────────────
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATASET_PATH = os.path.join(BASE_DIR, "dataset.csv")
 
@@ -29,9 +28,9 @@ print(f"📊 Category distribution:\n{df['category'].value_counts()}\n")
 X = df["text"].astype(str)
 y = df["category"]
 
-# ─────────────────────────────────────────────
+
 # 2. Define Pipelines
-# ─────────────────────────────────────────────
+
 vectorizer = TfidfVectorizer(
     ngram_range=(1, 2),       # unigrams + bigrams
     max_features=5000,
@@ -52,9 +51,9 @@ lr_pipeline = Pipeline([
                                 multi_class='multinomial', random_state=42))
 ])
 
-# ─────────────────────────────────────────────
+
 # 3. Cross-Validation Comparison
-# ─────────────────────────────────────────────
+
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 print("🔍 Running 5-Fold Cross-Validation...\n")
@@ -72,9 +71,9 @@ print(f"   Fold Accuracies : {[round(s, 4) for s in lr_scores]}")
 print(f"   Mean Accuracy   : {lr_scores.mean():.4f}")
 print(f"   Std Dev         : {lr_scores.std():.4f}\n")
 
-# ─────────────────────────────────────────────
+
 # 4. Select Best Model
-# ─────────────────────────────────────────────
+
 if lr_scores.mean() >= nb_scores.mean():
     best_pipeline = lr_pipeline
     best_model_name = "Logistic Regression"
@@ -84,9 +83,9 @@ else:
 
 print(f"🏆 Best Model Selected: {best_model_name}\n")
 
-# ─────────────────────────────────────────────
+
 # 5. Train Best Model on Full Data
-# ─────────────────────────────────────────────
+
 best_pipeline.fit(X, y)
 print(f"✅ Model trained on full dataset.\n")
 
@@ -96,9 +95,9 @@ y_pred = cross_val_predict(best_pipeline, X, y, cv=cv)
 print("📋 Classification Report (Cross-Val Predictions):")
 print(classification_report(y, y_pred))
 
-# ─────────────────────────────────────────────
+
 # 6. Save Model and Vectorizer Separately
-# ─────────────────────────────────────────────
+
 # Save full pipeline as model
 MODEL_PATH = os.path.join(BASE_DIR, "model.pkl")
 with open(MODEL_PATH, "wb") as f:
